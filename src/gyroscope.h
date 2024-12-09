@@ -2,7 +2,6 @@
 #define GYROSCOPE_H
 
 #include "mbed.h"
-#include <vector>
 
 // --- Register Addresses and Configuration Values ---
 #define CTRL_REG1 0x20               // Control register 1 address
@@ -25,7 +24,7 @@ struct GyroData {
     uint32_t timestamp;
 };
 
-extern std::vector<GyroData> recordedGesture;
+extern GyroData recordedGesture[1000];
 extern volatile bool isRecording;
 
 void read_gyro_data(float &gx, float &gy, float &gz);
