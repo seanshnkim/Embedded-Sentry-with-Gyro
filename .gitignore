@@ -1,0 +1,11 @@
+.pio
+.vscode
+cache
+include
+lib
+test
+.mbedignore
+mbed_app.json
+.DS_Store
+src/*.txt
+src/*.comments
