@@ -10,7 +10,6 @@ volatile uint32_t lastButtonPress = 0;
 InterruptIn userButton(BUTTON1);
 DigitalOut led(LED1);
 LCDDisplay display;
-Ticker sampler;
 
 // Button interrupt handler
 void buttonCallback() {
@@ -35,13 +34,12 @@ int main() {
     while (1) {
         if (shouldStartRecording) {
             isRecording = true;
-            sampler.attach(&sample_data, 100ms);
             display.displayMessage("Recording...");
             shouldStartRecording = false;
+            sample_gyro_data();
         }
         if (shouldStopRecording) {
             isRecording = false;
-            sampler.detach();
             display.displayMessage("Recording Complete");
             shouldStopRecording = false;
         }

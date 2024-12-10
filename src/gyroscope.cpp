@@ -17,86 +17,37 @@ void spi_cb(int event) {
     flags.set(SPI_FLAG);  // Set the SPI_FLAG to signal that transfer is complete
 }
 
-void read_gyro_data(float &gx, float &gy, float &gz) {
-    static uint16_t raw_gx, raw_gy, raw_gz;
-    static int state = 0;
-
-    switch(state) {
-        case 0:
-            write_buf[0] = OUT_X_L | 0x80 | 0x40;
-            spi.transfer(write_buf, 7, read_buf, 7, spi_cb);
-            state = 1;
-            break;
-        case 1:
-            if(flags.get() & SPI_FLAG) {
-                flags.clear(SPI_FLAG);
-                raw_gx = (((uint16_t)read_buf[2]) << 8) | read_buf[1];
-                raw_gy = (((uint16_t)read_buf[4]) << 8) | read_buf[3];
-                raw_gz = (((uint16_t)read_buf[6]) << 8) | read_buf[5];
-
-                gx = raw_gx * DEG_TO_RAD;
-                gy = raw_gy * DEG_TO_RAD;
-                gz = raw_gz * DEG_TO_RAD;
-
-                state = 0;
-            }
-            break;
-    }
-}
-
-void _read_gyro_data(float &gx, float &gy, float &gz) {
-    uint16_t raw_gx, raw_gy, raw_gz;
-
-    // Prepare to read gyroscope output starting at OUT_X_L
-    write_buf[0] = OUT_X_L | 0x80 | 0x40; // Read mode + auto-increment
-    
-    // cs = 0;
-    spi.transfer(write_buf, 7, read_buf, 7, spi_cb);
-    // flags.wait_all(SPI_FLAG);
-    // cs = 1;
-
-    // --- Extract and Convert Raw Data ---
-    // Combine high and low bytes for X-axis
-    raw_gx = (((uint16_t)read_buf[2]) << 8) | read_buf[1];
-
-    // Combine high and low bytes for Y-axis
-    raw_gy = (((uint16_t)read_buf[4]) << 8) | read_buf[3];
-
-    // Combine high and low bytes for Z-axis
-    raw_gz = (((uint16_t)read_buf[6]) << 8) | read_buf[5];
-
-    // --- Debug and Teleplot Output ---
-    // Print raw values for debugging purposes
-    printf("RAW Angular Speed -> gx: %d deg/s, gy: %d deg/s, gz: %d deg/s\n", raw_gx, raw_gy, raw_gz);
-
-    // Print formatted output for Teleplot
-    printf(">x_axis: %d|g\n", raw_gx);
-    printf(">y_axis: %d|g\n", raw_gy);
-    printf(">z_axis: %d|g\n", raw_gz);
-
-    gx = raw_gx * DEG_TO_RAD;
-    gy = raw_gy * DEG_TO_RAD;
-    gz = raw_gz * DEG_TO_RAD;
-
-    // Print converted values (angular velocity in rad/s)
-    printf("Angular Speed -> gx: %.5f rad/s, gy: %.5f rad/s, gz: %.5f rad/s\n", gx, gy, gz);
-}
-
-void sample_data() {
+void sample_gyro_data() {
     float gx, gy, gz;
-    read_gyro_data(gx, gy, gz);
+    uint16_t raw_gx, raw_gy, raw_gz;
+    
+    while (isRecording) {
+        write_buf[0] = OUT_X_L | 0x80 | 0x40;
+        spi.transfer(write_buf, 7, read_buf, 7, spi_cb);
+        flags.wait_all(SPI_FLAG);
+        flags.clear(SPI_FLAG);
 
-    recordedGesture[gestureIndex] = {gx, gy, gz, us_ticker_read() / 1000};
-    gestureIndex++;
-}
+        raw_gx = (((uint16_t)read_buf[2]) << 8) | read_buf[1];
+        raw_gy = (((uint16_t)read_buf[4]) << 8) | read_buf[3];
+        raw_gz = (((uint16_t)read_buf[6]) << 8) | read_buf[5];
 
-void startRecording() {
-    gestureIndex = 0;
-    isRecording = true;
-}
+        gx = raw_gx * DEG_TO_RAD;
+        gy = raw_gy * DEG_TO_RAD;
+        gz = raw_gz * DEG_TO_RAD;
 
-void stopRecording() {
-    isRecording = false;
+        recordedGesture[gestureIndex] = {gx, gy, gz, us_ticker_read() / 1000};
+        gestureIndex++;
+
+        if (gestureIndex % 10 == 0) {
+            printf("Latest data: gInd=%d, gx=%.5f, gy=%.5f, gz=%.5f\n",
+                   gestureIndex,
+                   recordedGesture[gestureIndex-1].x,
+                   recordedGesture[gestureIndex-1].y,
+                   recordedGesture[gestureIndex-1].z);
+        }
+
+        ThisThread::sleep_for(100ms);
+    }
 }
 
 void init_gyroscope() {
