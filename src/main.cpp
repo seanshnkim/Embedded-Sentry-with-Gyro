@@ -45,6 +45,14 @@ int main() {
             display.displayMessage("Recording Complete");
             shouldStopRecording = false;
         }
+        if (isRecording && gestureIndex % 10 == 0) {
+            // Print the latest data
+            printf("Latest data: gInd=%d, gx=%.5f, gy=%.5f, gz=%.5f\n",
+                               gestureIndex,
+                               recordedGesture[gestureIndex-1].x,
+                               recordedGesture[gestureIndex-1].y,
+                               recordedGesture[gestureIndex-1].z);
+            }
         ThisThread::sleep_for(100ms);
     }
 }

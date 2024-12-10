@@ -34,21 +34,9 @@ void read_gyro_data(float &gx, float &gy, float &gz) {
                 raw_gy = (((uint16_t)read_buf[4]) << 8) | read_buf[3];
                 raw_gz = (((uint16_t)read_buf[6]) << 8) | read_buf[5];
 
-                // --- Debug and Teleplot Output ---
-                // Print raw values for debugging purposes
-                printf("RAW Angular Speed -> gx: %d deg/s, gy: %d deg/s, gz: %d deg/s\n", raw_gx, raw_gy, raw_gz);
-
-                // Print formatted output for Teleplot
-                printf(">x_axis: %d|g\n", raw_gx);
-                printf(">y_axis: %d|g\n", raw_gy);
-                printf(">z_axis: %d|g\n", raw_gz);
-
                 gx = raw_gx * DEG_TO_RAD;
                 gy = raw_gy * DEG_TO_RAD;
                 gz = raw_gz * DEG_TO_RAD;
-
-                // Print converted values (angular velocity in rad/s)
-                printf("Angular Speed -> gx: %.5f rad/s, gy: %.5f rad/s, gz: %.5f rad/s\n", gx, gy, gz);
 
                 state = 0;
             }
@@ -95,14 +83,11 @@ void _read_gyro_data(float &gx, float &gy, float &gz) {
 }
 
 void sample_data() {
-    if (gestureIndex) {
-        float gx, gy, gz;
-        read_gyro_data(gx, gy, gz);
-    
-        recordedGesture[gestureIndex] = {gx, gy, gz, us_ticker_read() / 1000};
-        gestureIndex++;
-    }
-    
+    float gx, gy, gz;
+    read_gyro_data(gx, gy, gz);
+
+    recordedGesture[gestureIndex] = {gx, gy, gz, us_ticker_read() / 1000};
+    gestureIndex++;
 }
 
 void startRecording() {

@@ -26,6 +26,7 @@ struct GyroData {
 
 extern GyroData recordedGesture[1000];
 extern volatile bool isRecording;
+extern volatile int gestureIndex;
 
 void read_gyro_data(float &gx, float &gy, float &gz);
 void sample_data();
