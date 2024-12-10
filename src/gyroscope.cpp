@@ -38,14 +38,6 @@ void sample_gyro_data() {
         recordedGesture[gestureIndex] = {gx, gy, gz, us_ticker_read() / 1000};
         gestureIndex++;
 
-        if (gestureIndex % 10 == 0) {
-            printf("Latest data: gInd=%d, gx=%.5f, gy=%.5f, gz=%.5f\n",
-                   gestureIndex,
-                   recordedGesture[gestureIndex-1].x,
-                   recordedGesture[gestureIndex-1].y,
-                   recordedGesture[gestureIndex-1].z);
-        }
-
         ThisThread::sleep_for(100ms);
     }
 }
@@ -66,7 +58,7 @@ void init_gyroscope() {
     write_buf[0] = CTRL_REG1;
     write_buf[1] = CTRL_REG1_CONFIG;
     spi.transfer(write_buf, 2, read_buf, 2, spi_cb);  // Initiate SPI transfer
-    // flags.wait_all(SPI_FLAG);  // Wait until the transfer completes
+    flags.wait_all(SPI_FLAG);  // Wait until the transfer completes
 
     // Configure Control Register 4 (CTRL_REG4)
     // - write_buf[0]: address of the register to write (CTRL_REG4)
@@ -74,5 +66,5 @@ void init_gyroscope() {
     write_buf[0] = CTRL_REG4;
     write_buf[1] = CTRL_REG4_CONFIG;
     spi.transfer(write_buf, 2, read_buf, 2, spi_cb);  // Initiate SPI transfer
-    // flags.wait_all(SPI_FLAG);  // Wait until the transfer completes
+    flags.wait_all(SPI_FLAG);  // Wait until the transfer completes
 }

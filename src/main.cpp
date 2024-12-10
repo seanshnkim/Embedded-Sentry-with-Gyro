@@ -10,6 +10,7 @@ volatile uint32_t lastButtonPress = 0;
 InterruptIn userButton(BUTTON1);
 DigitalOut led(LED1);
 LCDDisplay display;
+Thread samplingThread;
 
 // Button interrupt handler
 void buttonCallback() {
@@ -24,10 +25,21 @@ void buttonCallback() {
     }
 }
 
+void samplingThreadFunc() {
+    while (1) {
+        if (isRecording) {
+            sample_gyro_data();
+        }
+        // ThisThread::sleep_for(100ms);
+    }
+}
+
 int main() {
     display.init();
     init_gyroscope();
     userButton.fall(buttonCallback);
+
+    samplingThread.start(samplingThreadFunc);
 
     display.displayMessage("Press button to start");
 
@@ -36,14 +48,14 @@ int main() {
             isRecording = true;
             display.displayMessage("Recording...");
             shouldStartRecording = false;
-            sample_gyro_data();
+            // sample_gyro_data();
         }
         if (shouldStopRecording) {
             isRecording = false;
             display.displayMessage("Recording Complete");
             shouldStopRecording = false;
         }
-        if (isRecording && gestureIndex % 10 == 0) {
+        if (isRecording) {
             // Print the latest data
             printf("Latest data: gInd=%d, gx=%.5f, gy=%.5f, gz=%.5f\n",
                                gestureIndex,
