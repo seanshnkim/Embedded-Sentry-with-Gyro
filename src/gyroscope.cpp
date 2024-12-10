@@ -4,7 +4,8 @@ SPI spi(PF_9, PF_8, PF_7, PC_1, use_gpio_ssel);
 // DigitalOut cs(PC_1);
 EventFlags flags;
 
-GyroData recordedGesture[1000];
+GyroData keyGesture[1000];
+GyroData enteredGesture[1000];
 volatile int gestureIndex = 0;
 
 // Buffers for SPI data transfer:
@@ -12,16 +13,18 @@ volatile int gestureIndex = 0;
 // - read_buf: stores data received from the gyroscope
 uint8_t write_buf[32], read_buf[32];
 volatile bool isRecording = false;
+volatile bool isUnlocking = false;
 
 void spi_cb(int event) {
     flags.set(SPI_FLAG);  // Set the SPI_FLAG to signal that transfer is complete
 }
 
-void sample_gyro_data() {
+// function input is GyroData array
+void sample_gyro_data(GyroData * InputGesture) {
     float gx, gy, gz;
     uint16_t raw_gx, raw_gy, raw_gz;
     
-    while (isRecording) {
+    while (isRecording || isUnlocking) {
         write_buf[0] = OUT_X_L | 0x80 | 0x40;
         spi.transfer(write_buf, 7, read_buf, 7, spi_cb);
         flags.wait_all(SPI_FLAG);
@@ -35,7 +38,7 @@ void sample_gyro_data() {
         gy = raw_gy * DEG_TO_RAD;
         gz = raw_gz * DEG_TO_RAD;
 
-        recordedGesture[gestureIndex] = {gx, gy, gz, us_ticker_read() / 1000};
+        InputGesture[gestureIndex] = {gx, gy, gz, us_ticker_read() / 1000};
         gestureIndex++;
 
         ThisThread::sleep_for(100ms);

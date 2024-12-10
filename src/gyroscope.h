@@ -24,13 +24,13 @@ struct GyroData {
     uint32_t timestamp;
 };
 
-extern GyroData recordedGesture[1000];
+extern GyroData keyGesture[1000];
+extern GyroData enteredGesture[1000];
 extern volatile bool isRecording;
+extern volatile bool isUnlocking;
 extern volatile int gestureIndex;
 
-void sample_gyro_data();
-void startRecording();
-void stopRecording();
+void sample_gyro_data(GyroData * InputGesture);
 void init_gyroscope();
 
 #endif
