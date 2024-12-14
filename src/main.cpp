@@ -108,7 +108,7 @@ int main() {
                                enteredGesture[gestureIndex-1].x,
                                enteredGesture[gestureIndex-1].y,
                                enteredGesture[gestureIndex-1].z);
-        }
+            }
         ThisThread::sleep_for(100ms);
         
         // If time passed 10 seconds, stop samplingThread
