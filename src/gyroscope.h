@@ -26,11 +26,17 @@ struct GyroData {
 
 extern GyroData keyGesture[1000];
 extern GyroData enteredGesture[1000];
+
 extern volatile bool isRecording;
-extern volatile bool isUnlocking;
+extern volatile bool isEntering;
+extern volatile bool isComparing;
+extern volatile bool isUnlocked;
+
 extern volatile int gestureIndex;
 
-void sample_gyro_data(GyroData * InputGesture);
 void init_gyroscope();
+void sample_gyro_data(GyroData* InputGesture);
+float dtw(const GyroData* gest1, const GyroData* gest2, int len1, int len2);
+bool compareGest(const GyroData* keyGest, const GyroData* enteredGest, int keyLen, int enteredLen);
 
 #endif
