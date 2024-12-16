@@ -1,6 +1,7 @@
 #include "mbed.h"
 #include "lcd_display.h"
 #include "gyroscope.h"
+#include <string>
 
 volatile bool startSettingKey = false;
 volatile bool stopSettingKey = false;
@@ -20,6 +21,7 @@ Thread samplingThread;
 
 int lenKeyGest = 0;
 int lenEnteredGest = 0;
+float dtwDist = 0;
 
 // Button interrupt handler
 void buttonCallback() {
@@ -62,8 +64,10 @@ void samplingThreadFunc() {
             lenKeyGest = gestureIndex;
         }
         if (isComparing) {
-            isUnlocked = compareGest(keyGesture, enteredGesture, lenKeyGest, lenEnteredGest);
-            isComparing = false;
+            // isUnlocked = compareGest(keyGesture, enteredGesture, lenKeyGest, lenEnteredGest);
+            // dtwDist = dtw(keyGesture, enteredGesture, lenKeyGest, lenEnteredGest);
+            // isUnlocked = true;
+            // isComparing = false;
         }
     }
 }
@@ -102,13 +106,20 @@ int main() {
             stopEntering = false;
             isComparing = true;
         }
-        if (isUnlocked) {
-            display.displayMessage("Unlocked");
-            isUnlocked = false;
+        if (isComparing) {
+            // display.displayMessage("Unlocked");
+            dtwDist = dtw(keyGesture, enteredGesture, lenKeyGest, lenEnteredGest);
+            // std::string message = "DTW Distance: " + std::to_string(dtwDist);
+            // display.displayMessage(message.c_str());
+            char buffer[50];
+            snprintf(buffer, sizeof(buffer), "DTW Distance: %.2f", dtwDist);
+            display.displayMessage(buffer);
+
+            isComparing = false;
         }
-        else {
-            display.displayMessage("Wrong key!");
-        }
+        // else {
+        //     display.displayMessage("Wrong key!");
+        // }
         // For debugging, print out gyroscope data
         if (isRecording) {
             // Key gesture data
@@ -126,18 +137,7 @@ int main() {
                                enteredGesture[gestureIndex-1].y,
                                enteredGesture[gestureIndex-1].z);
         }
-        if (isComparing) {
-            
-        }
         ThisThread::sleep_for(100ms);
-        
-        // If time passed 10 seconds, stop samplingThread
-        // Lack of documentation, I guess us_ticker_read() increments the counter by 1 every 1us
-        // if (us_ticker_read() > 1'000'000'0) {
-        //     display.displayMessage("Timeout");
-        //     samplingThread.terminate();
-        //     break;
-        // }
     }
     return 0;
 }
