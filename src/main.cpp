@@ -8,6 +8,8 @@ volatile bool stopSettingKey = false;
 volatile bool startEntering = false;
 volatile bool stopEntering = false;
 
+volatile bool startComparing = false;
+volatile bool stopComparing = false;
 volatile bool isComparing = false;
 volatile bool isUnlocked = false;
 
@@ -21,7 +23,7 @@ Thread samplingThread;
 
 int lenKeyGest = 0;
 int lenEnteredGest = 0;
-float dtwDist = 0;
+volatile float dtwDist = 0;
 
 // Button interrupt handler
 void buttonCallback() {
@@ -65,9 +67,9 @@ void samplingThreadFunc() {
         }
         if (isComparing) {
             // isUnlocked = compareGest(keyGesture, enteredGesture, lenKeyGest, lenEnteredGest);
-            // dtwDist = dtw(keyGesture, enteredGesture, lenKeyGest, lenEnteredGest);
-            // isUnlocked = true;
-            // isComparing = false;
+            dtwDist = dtw(keyGesture, enteredGesture, lenKeyGest, lenEnteredGest);
+            ThisThread::sleep_for(200);
+            stopComparing = true;
         }
     }
 }
@@ -104,22 +106,18 @@ int main() {
             isEntering = false;
             display.displayMessage("Entered complete");
             stopEntering = false;
+            startComparing = true;
+        }
+        if (startComparing) {
             isComparing = true;
+            display.displayMessage("Start comparing...");
+            startComparing = false;
         }
-        if (isComparing) {
-            // display.displayMessage("Unlocked");
-            dtwDist = dtw(keyGesture, enteredGesture, lenKeyGest, lenEnteredGest);
-            // std::string message = "DTW Distance: " + std::to_string(dtwDist);
-            // display.displayMessage(message.c_str());
-            char buffer[50];
-            snprintf(buffer, sizeof(buffer), "DTW Distance: %.2f", dtwDist);
-            display.displayMessage(buffer);
-
+        if (stopComparing) {
             isComparing = false;
+            display.displayMessage("Comparison complete");
+            stopComparing = false;
         }
-        // else {
-        //     display.displayMessage("Wrong key!");
-        // }
         // For debugging, print out gyroscope data
         if (isRecording) {
             // Key gesture data

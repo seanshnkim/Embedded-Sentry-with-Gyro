@@ -108,6 +108,5 @@ bool compareGest(const GyroData* keyGest, const GyroData* enteredGest, int keyLe
     
     // You may need to adjust this threshold based on your specific use case
     const float THRESHOLD = 5.0f;
-    
     return dtwDistance < THRESHOLD;
 }
