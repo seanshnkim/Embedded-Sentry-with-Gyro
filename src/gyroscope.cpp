@@ -1,23 +1,23 @@
 #include "gyroscope.h"
 
 SPI spi(PF_9, PF_8, PF_7, PC_1, use_gpio_ssel);
-// DigitalOut cs(PC_1);
 EventFlags flags;
 
-GyroData keyGesture[100];
-GyroData enteredGesture[100];
+GyroData keyGesture[1000];
+GyroData enteredGesture[1000];
 volatile int gestureIndex = 0;
 
-// Buffers for SPI data transfer:
-// - write_buf: stores data to send to the gyroscope
-// - read_buf: stores data received from the gyroscope
 uint8_t write_buf[32], read_buf[32];
-
 volatile bool isRecording = false;
 volatile bool isEntering = false;
 
+// Window Size for Moving Average Window
+#define WINDOW_SIZE 10
+float window_gx[WINDOW_SIZE] = {0}, window_gy[WINDOW_SIZE] = {0}, window_gz[WINDOW_SIZE] = {0};
+int window_index = 0;
+
 void spi_cb(int event) {
-    flags.set(SPI_FLAG);  // Set the SPI_FLAG to signal that transfer is complete
+    flags.set(SPI_FLAG);
 }
 
 void init_gyroscope() {
@@ -47,18 +47,25 @@ void init_gyroscope() {
     flags.wait_all(SPI_FLAG);  // Wait until the transfer completes
 }
 
-// function input is GyroData array
+
 void sample_gyro_data(GyroData* InputGesture) {
     float gx, gy, gz;
-    uint16_t raw_gx, raw_gy, raw_gz;
+    short raw_gx, raw_gy, raw_gz;
     gestureIndex = 0;
-    
-    while (isRecording || isEntering) {
-        write_buf[0] = OUT_X_L | 0x80 | 0x40;
+
+    while (gestureIndex < 100) {
+        // Check the currentState live to stop sampling if needed
+        if (currentState != RECORDING && currentState != ENTERING) {
+            printf("Sampling interrupted.\n");
+            break;
+        }
+
+        write_buf[0] = OUT_X_L | 0x80 | 0x40;  // Read multiple registers
         spi.transfer(write_buf, 7, read_buf, 7, spi_cb);
         flags.wait_all(SPI_FLAG);
         flags.clear(SPI_FLAG);
 
+        // Combine the high and low bytes
         raw_gx = (((uint16_t)read_buf[2]) << 8) | read_buf[1];
         raw_gy = (((uint16_t)read_buf[4]) << 8) | read_buf[3];
         raw_gz = (((uint16_t)read_buf[6]) << 8) | read_buf[5];
@@ -66,6 +73,26 @@ void sample_gyro_data(GyroData* InputGesture) {
         gx = raw_gx * DEG_TO_RAD;
         gy = raw_gy * DEG_TO_RAD;
         gz = raw_gz * DEG_TO_RAD;
+
+        // 2. Moving Average FIR
+        window_gx[window_index] = gx;
+        window_gy[window_index] = gy;
+        window_gz[window_index] = gz;
+        float avg_gx = 0.0f, avg_gy = 0.0f, avg_gz = 0.0f;
+        for (int i = 0; i < WINDOW_SIZE; i++) {
+            avg_gx += window_gx[i];
+            avg_gy += window_gy[i];
+            avg_gz += window_gz[i];
+        }
+        avg_gx /= WINDOW_SIZE;
+        avg_gy /= WINDOW_SIZE;
+        avg_gz /= WINDOW_SIZE;
+        window_index = (window_index + 1) % WINDOW_SIZE;
+
+        if (gestureIndex % 10 == 0) {
+            printf("Raw GX: %d, GY: %d, GZ: %d\n", raw_gx, raw_gy, raw_gz);
+            printf("Scaled GX: %.2f, GY: %.2f, GZ: %.2f\n", gx, gy, gz);
+        }
 
         InputGesture[gestureIndex] = {gx, gy, gz, us_ticker_read() / 1000};
         gestureIndex++;
@@ -75,38 +102,50 @@ void sample_gyro_data(GyroData* InputGesture) {
 }
 
 float dtw(const GyroData* gest1, const GyroData* gest2, int len1, int len2) {
-    const int MAX_LEN = 100; // Adjust this based on your maximum gesture length
-    float dtw[MAX_LEN][MAX_LEN];
-
-    // Initialize the DTW matrix
-    for (int i = 0; i < len1; i++) {
-        for (int j = 0; j < len2; j++) {
-            dtw[i][j] = std::numeric_limits<float>::infinity();
-        }
+    const int MAX_LEN = 100;  // Ensure maximum size
+    if (len1 > MAX_LEN || len2 > MAX_LEN || len1 <= 0 || len2 <= 0) {
+        printf("Error: Invalid gesture lengths: len1=%d, len2=%d\n", len1, len2);
+        return std::numeric_limits<float>::infinity();
     }
 
-    dtw[0][0] = 0;
+    static float dtwMatrix[MAX_LEN][MAX_LEN];  // static allocate on data segment
+
+    // Initialize DTW matrix
+    for (int i = 0; i < len1; i++) {
+        for (int j = 0; j < len2; j++) {
+            dtwMatrix[i][j] = std::numeric_limits<float>::infinity();
+        }
+    }
+    dtwMatrix[0][0] = 0;
+
+    printf("DTW Initialization Complete. Starting computation...\n");
 
     // Calculate DTW matrix
-    for (int i = 1; i < len1; i++) {
-        for (int j = 1; j < len2; j++) {
+    for (int i = 1; i < std::min(len1, MAX_LEN); i++) {
+        for (int j = 1; j < std::min(len2, MAX_LEN); j++) {
             float cost = std::sqrt(
                 std::pow(gest1[i].x - gest2[j].x, 2) +
                 std::pow(gest1[i].y - gest2[j].y, 2) +
                 std::pow(gest1[i].z - gest2[j].z, 2)
             );
-            dtw[i][j] = cost + std::min({dtw[i-1][j], dtw[i][j-1], dtw[i-1][j-1]});
+
+            dtwMatrix[i][j] = cost + std::min({
+                dtwMatrix[i-1][j],    // Insertion
+                dtwMatrix[i][j-1],    // Deletion
+                dtwMatrix[i-1][j-1]   // Match
+            });
+
+            // Debug print progress -> costly!
+            // printf("DTW[%d][%d]: %.2f\n", i, j, dtwMatrix[i][j]);
         }
     }
-
-    // Return the DTW distance
-    return dtw[len1-1][len2-1];
+    printf("DTW Computed Successfully.\n");
+    return dtwMatrix[len1-1][len2-1];
 }
+
 
 bool compareGest(const GyroData* keyGest, const GyroData* enteredGest, int keyLen, int enteredLen) {
     float dtwDistance = dtw(keyGest, enteredGest, keyLen, enteredLen);
-    
-    // You may need to adjust this threshold based on your specific use case
     const float THRESHOLD = 5.0f;
     return dtwDistance < THRESHOLD;
 }

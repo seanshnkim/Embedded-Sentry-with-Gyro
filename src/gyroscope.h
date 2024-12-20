@@ -2,6 +2,7 @@
 #define GYROSCOPE_H
 
 #include "mbed.h"
+#include "state.h"
 
 // --- Register Addresses and Configuration Values ---
 #define CTRL_REG1 0x20               // Control register 1 address
@@ -24,8 +25,8 @@ struct GyroData {
     uint32_t timestamp;
 };
 
-extern GyroData keyGesture[100];
-extern GyroData enteredGesture[100];
+extern GyroData keyGesture[1000];
+extern GyroData enteredGesture[1000];
 
 extern volatile bool isRecording;
 extern volatile bool isEntering;
