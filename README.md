@@ -1,6 +1,9 @@
 # Embedded-Sentry-with-Gyro
 Embedded Challenge Fall 2024 Term Project: "Embedded Sentry"
 
+#### Presentation and Video:
+https://docs.google.com/presentation/d/1zvveqmzDyTDRLGLaccSPtkZkLWgNfwToebSEEsMKPLg/edit?usp=sharing
+
 ### IDE
 - PlatformIO
 - VSCode
