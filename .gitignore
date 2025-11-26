@@ -9,3 +9,5 @@ mbed_app.json
 src/*.txt
 src/*.comments
 .pio
+Report_Embedded-Sentry_Sean-Kim_tentative.pdf
+_src

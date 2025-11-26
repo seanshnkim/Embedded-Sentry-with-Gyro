@@ -152,9 +152,9 @@ float dtw(const GyroData* gest1, const GyroData* gest2, int len1, int len2) {
     return dtwMatrix[len1-1][len2-1];
 }
 
-
-bool compareGest(const GyroData* keyGest, const GyroData* enteredGest, int keyLen, int enteredLen) {
-    float dtwDistance = dtw(keyGest, enteredGest, keyLen, enteredLen);
-    const float THRESHOLD = 5.0f;
-    return dtwDistance < THRESHOLD;
-}
+// This must be removed.
+// bool compareGest(const GyroData* keyGest, const GyroData* enteredGest, int keyLen, int enteredLen) {
+//     float dtwDistance = dtw(keyGest, enteredGest, keyLen, enteredLen);
+//     const float THRESHOLD = 5.0f;
+//     return dtwDistance < THRESHOLD;
+// }
