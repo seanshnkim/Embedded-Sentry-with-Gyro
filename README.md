@@ -1,20 +1,6 @@
 # Embedded-Sentry-with-Gyro
 Embedded Challenge Fall 2024 Term Project: "Embedded Sentry"
 
-#### Presentation and Video:
-https://docs.google.com/presentation/d/1zvveqmzDyTDRLGLaccSPtkZkLWgNfwToebSEEsMKPLg/edit?usp=sharing
-
-
-## Objective
-The objective is to implement "unlock/lock" system using hand gestures. It uses the STM32F429 microcontroller. The device has several peripherals, but I mainly used three components:
-
-1) LCD display
-2) Gyroscope
-3) Button
-
-- LCD displays text and emojis so the user knows whether the input is correct.
-- The gyroscope captures hand gestures as angular rate or rotational speed on the x, y, and z axes. I used SPI to communicate with the gyroscope.
-
 # How to Interact
 
 ## Start with Button
