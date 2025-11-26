@@ -1,6 +1,10 @@
 # Embedded-Sentry-with-Gyro
 Embedded Challenge Fall 2024 Term Project: "Embedded Sentry"
 
+# Flow Chart
+
+![Flow Chart](img/flow-chart.png)
+
 # How to Interact
 
 ## Start with Button

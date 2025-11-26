@@ -21,8 +21,9 @@ Mutex stateMutex;  // mutex for protecting state transitions
 int lenKeyGest = 0;
 int lenEnteredGest = 0;
 
-volatile bool isComparing = false;
-volatile bool isUnlocked = false;
+// Artifact variables
+// volatile bool isComparing = false;
+// volatile bool isUnlocked = false;
 
 // Event handlers for button actions
 void startRecording() {
