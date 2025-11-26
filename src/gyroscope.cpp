@@ -1,4 +1,10 @@
 #include "gyroscope.h"
+#include <cstdio>
+#include <cstdint>
+#include <cmath>
+#include <algorithm>
+#include <limits>
+#include "mbed.h"
 
 SPI spi(PF_9, PF_8, PF_7, PC_1, use_gpio_ssel);
 EventFlags flags;
@@ -90,11 +96,14 @@ void sample_gyro_data(GyroData* InputGesture) {
         window_index = (window_index + 1) % WINDOW_SIZE;
 
         if (gestureIndex % 10 == 0) {
-            printf("Raw GX: %d, GY: %d, GZ: %d\n", raw_gx, raw_gy, raw_gz);
+            // printf("Raw GX: %d, GY: %d, GZ: %d\n", raw_gx, raw_gy, raw_gz);
             printf("Scaled GX: %.2f, GY: %.2f, GZ: %.2f\n", gx, gy, gz);
         }
 
-        InputGesture[gestureIndex] = {gx, gy, gz, us_ticker_read() / 1000};
+        InputGesture[gestureIndex].x = gx;
+        InputGesture[gestureIndex].y = gy;
+        InputGesture[gestureIndex].z = gz;
+        InputGesture[gestureIndex].timestamp = us_ticker_read() / 1000;
         gestureIndex++;
 
         ThisThread::sleep_for(100ms);

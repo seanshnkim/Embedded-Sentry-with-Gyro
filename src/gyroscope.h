@@ -1,7 +1,7 @@
 #ifndef GYROSCOPE_H
 #define GYROSCOPE_H
 
-#include "mbed.h"
+#include <cstdint>
 #include "state.h"
 
 // --- Register Addresses and Configuration Values ---
